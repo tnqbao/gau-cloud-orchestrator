@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gau-localstack-deployment
+  namespace: bao-${DEPLOY_ENV}-env
+  labels:
+    app: bao-platform
+    env: ${DEPLOY_ENV}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gau-localstack-service
+  template:
+    metadata:
+      labels:
+        app: gau-localstack-service
+    spec:
+      containers:
+        - name: localstack
+          image: localstack/localstack:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: edge
+              containerPort: 4566
+              protocol: TCP
+            - name: ext-services
+              containerPort: 4571
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: gau-localstack-${DEPLOY_ENV}-config
+            - secretRef:
+                name: gau-localstack-${DEPLOY_ENV}-secret
+          volumeMounts:
+            - name: localstack-data
+              mountPath: /var/lib/localstack/data
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+      volumes:
+        - name: localstack-data
+          persistentVolumeClaim:
+            claimName: gau-localstack-${DEPLOY_ENV}-pvc
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

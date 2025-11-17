@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gau-localstack-${DEPLOY_ENV}-config
+  namespace: bao-${DEPLOY_ENV}-env
+  labels:
+    app: bao-platform
+    env: ${DEPLOY_ENV}
+data:
+  DEPLOY_ENV: "${DEPLOY_ENV}"
+  SERVICES: "${LOCALSTACK_SERVICES}"
+  DEBUG: "0"
+  LAMBDA_EXECUTOR: "docker-reuse"
+  DATA_DIR: "/var/lib/localstack/data"
+  AWS_DEFAULT_REGION: "${AWS_REGION}"
+  EDGE_PORT: "${LOCALSTACK_EDGE_PORT}"
