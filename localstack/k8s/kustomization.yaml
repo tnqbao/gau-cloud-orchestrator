@@ -8,3 +8,4 @@ resources:
   - ./base/pvc.yaml
   - ./base/ingress.yaml
   - ./base/plugin-configmap.yaml
+  - ./base/init-hooks-configmap.yaml
