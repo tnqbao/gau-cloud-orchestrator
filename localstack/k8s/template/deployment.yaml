@@ -38,6 +38,8 @@ spec:
           volumeMounts:
             - name: localstack-data
               mountPath: /var/lib/localstack/data
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
 #            - name: localstack-plugins
 #              mountPath: /opt/localstack/plugins
           resources:
@@ -51,6 +53,10 @@ spec:
         - name: localstack-data
           persistentVolumeClaim:
             claimName: gau-localstack-pvc
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
 #        - name: localstack-plugins
 #          configMap:
 #            name: localstack-plugins-cm
