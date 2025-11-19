@@ -13,7 +13,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: ${API_DOMAIN}
+    - host: "${API_DOMAIN}"
       http:
         paths:
           - path: /
@@ -23,7 +23,7 @@ spec:
                 name: gau-minio-service
                 port:
                   number: 9000
-    - host: ${DASHBOARD_DOMAIN}
+    - host: "${DASHBOARD_DOMAIN}"
       http:
         paths:
           - path: /
