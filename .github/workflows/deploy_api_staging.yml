@@ -34,11 +34,11 @@ jobs:
 
       - name: Download kubeconfig.yaml from server
         run: |
-          mkdir -p ./deploy/k8s/staging
+          mkdir -p ./api/deploy/k8s/staging
           sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.secret/k8s/kubeconfig.yaml ./api/deploy/k8s/staging/kubeconfig.yaml
 
       - name: Set KUBECONFIG environment variable
-        run: echo "KUBECONFIG=$GITHUB_WORKSPACE/deploy/k8s/staging/kubeconfig.yaml" >> $GITHUB_ENV
+        run: echo "KUBECONFIG=$GITHUB_WORKSPACE/api/deploy/k8s/staging/kubeconfig.yaml" >> $GITHUB_ENV
 
       - name: Check Kubernetes access
         run: kubectl get nodes
