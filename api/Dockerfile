@@ -76,8 +76,8 @@ RUN apk add --no-cache \
 # Copy binaries and required files
 COPY --from=builder /app/http-service .
 #COPY --from=builder /app/consumer-service .
-COPY api/migration ./migration
-COPY api/config ./config
+COPY migration ./migration
+COPY config ./config
 COPY entrypoint.sh .
 
 RUN chmod +x entrypoint.sh
