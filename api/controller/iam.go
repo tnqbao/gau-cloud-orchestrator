@@ -85,6 +85,7 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 
 	// Create IAM user in database
 	iamUser := &entity.IAMUser{
+		ID:        uuid.New(), // Generate UUID here
 		AccessKey: req.AccessKey,
 		SecretKey: req.SecretKey,
 		Name:      req.Name,
