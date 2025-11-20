@@ -17,7 +17,7 @@ func SetupRouter(ctrl *controller.Controller) *gin.Engine {
 	{
 		apiRoutes.Use(middles.AuthMiddleware)
 
-		aimRoutes := apiRoutes.Group("/aim")
+		aimRoutes := apiRoutes.Group("/iam")
 		{
 			aimRoutes.POST("/", ctrl.CreateIAM)
 			aimRoutes.GET("/", ctrl.ListIAMs)
