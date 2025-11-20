@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: gau-account-ingress
+  name: gau-cloud-ingress
   namespace: bao-${DEPLOY_ENV}-env
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
@@ -14,6 +14,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: gau-account-http-service
+                name: gau-cloud-http-service
                 port:
                   number: 8080
