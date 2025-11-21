@@ -27,6 +27,12 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 		return
 	}
 
+	// Set default role to "user" (readwrite) if not provided
+	if req.Role == "" {
+		req.Role = "user"
+		ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Role not provided, defaulting to 'user' (readwrite)")
+	}
+
 	// Check if IAM user with the same name already exists
 	existsByName, err := ctrl.Repository.IAMUserRepo.CheckIAMExistsByName(req.Name)
 	if err != nil {
