@@ -12,17 +12,10 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 	ctx := c.Request.Context()
 	ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Received CreateIAM request")
 
-	userIDStr := c.GetString("user_id")
-	if userIDStr == "" {
-		ctrl.Infra.Logger.ErrorWithContextf(ctx, nil, "[IAM] user_id not found in context")
-		utils.JSON401(c, "Unauthorized: user_id not found")
-		return
-	}
-
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
-		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] Invalid user_id format: %v", err)
-		utils.JSON400(c, "Invalid user_id format")
+		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] %v", err)
+		utils.JSON401(c, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -32,6 +25,12 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] Failed to bind CreateIAM request: %v", err)
 		utils.JSON400(c, "Invalid request payload")
 		return
+	}
+
+	// Set default role to "user" (readwrite) if not provided
+	if req.Role == "" {
+		req.Role = "user"
+		ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Role not provided, defaulting to 'user' (readwrite)")
 	}
 
 	// Check if IAM user with the same name already exists
@@ -148,13 +147,11 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 func (ctrl *Controller) ListIAMs(c *gin.Context) {
 	ctx := c.Request.Context()
 	ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Received ListIAMs request")
-	userIDStr := c.GetString("user_id")
 
-	// Parse user_id from string to UUID
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
-		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] Invalid user_id format: %v", err)
-		utils.JSON400(c, "Invalid user_id format")
+		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] %v", err)
+		utils.JSON401(c, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -205,7 +202,7 @@ func (ctrl *Controller) DeleteIAMByID(c *gin.Context) {
 	utils.JSON200(c, gin.H{"message": "IAM user deleted successfully"})
 }
 
-func (ctrl Controller) UpdateIAMByID(c *gin.Context) {
+func (ctrl *Controller) UpdateIAMByID(c *gin.Context) {
 	ctx := c.Request.Context()
 	ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Received UpdateIAMByID request")
 
