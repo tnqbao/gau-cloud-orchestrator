@@ -8,7 +8,7 @@ import (
 
 func SetupRouter(ctrl *controller.Controller) *gin.Engine {
 	r := gin.Default()
-	middles, err := middlewares.middlewares.NewMiddlewares(ctrl)
+	middles, err := middlewares.NewMiddlewares(ctrl)
 	if err != nil {
 		panic(err)
 	}
