@@ -5,10 +5,10 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/tnqbao/gau-cloud-orchestrator/config"
-	"github.com/tnqbao/gau-cloud-orchestrator/controller"
+	"github.com/tnqbao/gau-cloud-orchestrator/http/controller"
+	"github.com/tnqbao/gau-cloud-orchestrator/http/route"
 	"github.com/tnqbao/gau-cloud-orchestrator/infra"
 	"github.com/tnqbao/gau-cloud-orchestrator/repository"
-	"github.com/tnqbao/gau-cloud-orchestrator/route"
 )
 
 func main() {

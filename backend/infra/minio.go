@@ -159,6 +159,62 @@ func (m *MinioClient) EnableIAMUser(ctx context.Context, accessKey string) error
 	return nil
 }
 
+// AddCannedPolicy creates a custom policy in MinIO
+func (m *MinioClient) AddCannedPolicy(ctx context.Context, policyName string, policyJSON []byte) error {
+	if policyName == "" {
+		return fmt.Errorf("policyName cannot be empty")
+	}
+	if len(policyJSON) == 0 {
+		return fmt.Errorf("policyJSON cannot be empty")
+	}
+
+	err := m.Admin.AddCannedPolicy(ctx, policyName, policyJSON)
+	if err != nil {
+		return fmt.Errorf("failed to add canned policy: %w", err)
+	}
+
+	return nil
+}
+
+// CreateIAMUserWithCustomPolicy creates a user, creates a custom policy, and attaches it
+func (m *MinioClient) CreateIAMUserWithCustomPolicy(ctx context.Context, accessKey, secretKey, policyName string, policyJSON []byte) error {
+	// Create custom policy first
+	if err := m.AddCannedPolicy(ctx, policyName, policyJSON); err != nil {
+		return fmt.Errorf("failed to create custom policy: %w", err)
+	}
+
+	// Create user
+	if err := m.CreateIAMUser(ctx, accessKey, secretKey); err != nil {
+		// Rollback: delete policy if user creation fails
+		_ = m.DeletePolicy(ctx, policyName)
+		return err
+	}
+
+	// Attach policy to user
+	if err := m.AttachPolicyToUser(ctx, accessKey, policyName); err != nil {
+		// Rollback: delete user and policy
+		_ = m.DeleteIAMUser(ctx, accessKey)
+		_ = m.DeletePolicy(ctx, policyName)
+		return err
+	}
+
+	return nil
+}
+
+// DeletePolicy removes a policy from MinIO
+func (m *MinioClient) DeletePolicy(ctx context.Context, policyName string) error {
+	if policyName == "" {
+		return fmt.Errorf("policyName cannot be empty")
+	}
+
+	err := m.Admin.RemoveCannedPolicy(ctx, policyName)
+	if err != nil {
+		return fmt.Errorf("failed to delete policy: %w", err)
+	}
+
+	return nil
+}
+
 // ListIAMUsers lists all IAM users in MinIO
 func (m *MinioClient) ListIAMUsers(ctx context.Context) (map[string]madmin.UserInfo, error) {
 	users, err := m.Admin.ListUsers(ctx)

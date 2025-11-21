@@ -1,4 +1,4 @@
-package infra
+package produce
 
 import (
 	"context"
@@ -17,12 +17,12 @@ type EmailMessage struct {
 }
 
 type EmailService struct {
-	rabbitmq *RabbitMQClient
+	channel *amqp.Channel
 }
 
-func InitEmailService(rabbitmq *RabbitMQClient) *EmailService {
+func InitEmailService(channel *amqp.Channel) *EmailService {
 	return &EmailService{
-		rabbitmq: rabbitmq,
+		channel: channel,
 	}
 }
 
@@ -68,7 +68,7 @@ func (s *EmailService) publishEmail(ctx context.Context, routingKey string, mess
 		return fmt.Errorf("failed to marshal email message: %w", err)
 	}
 
-	err = s.rabbitmq.Channel.PublishWithContext(
+	err = s.channel.PublishWithContext(
 		ctx,
 		"email_exchange", // exchange
 		routingKey,       // routing key

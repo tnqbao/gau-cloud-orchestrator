@@ -3,14 +3,28 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-cloud-orchestrator/controller/dto"
 	"github.com/tnqbao/gau-cloud-orchestrator/entity"
+	"github.com/tnqbao/gau-cloud-orchestrator/http/controller/dto"
 	"github.com/tnqbao/gau-cloud-orchestrator/utils"
 )
 
 func (ctrl *Controller) CreateIAM(c *gin.Context) {
 	ctx := c.Request.Context()
 	ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Received CreateIAM request")
+
+	userIDStr := c.GetString("user_id")
+	if userIDStr == "" {
+		ctrl.Infra.Logger.ErrorWithContextf(ctx, nil, "[IAM] user_id not found in context")
+		utils.JSON401(c, "Unauthorized: user_id not found")
+		return
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] Invalid user_id format: %v", err)
+		utils.JSON400(c, "Invalid user_id format")
+		return
+	}
 
 	var req dto.CreateIAMRequestDTO
 
@@ -62,21 +76,14 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 		return
 	}
 
-	// Determine MinIO policy based on role
-	var minioPolicy string
-	switch req.Role {
-	case "admin":
-		minioPolicy = "readwrite" // Full access to create/delete buckets and objects
-	case "user":
-		minioPolicy = "readwrite" // Standard user can read/write
-	case "viewer":
-		minioPolicy = "readonly" // Viewer can only read
-	default:
-		minioPolicy = "readwrite" // Default to readwrite
-	}
+	// Create custom policy name based on access key
+	policyName := req.AccessKey + "-s3-policy"
 
-	// Create IAM user on MinIO with policy attached
-	err = ctrl.Infra.Minio.CreateIAMUserWithPolicy(ctx, req.AccessKey, req.SecretKey, minioPolicy)
+	// Build policy JSON bytes from helper (all have Resource: [])
+	policyBytes := BuildPolicyJSON(req.Role)
+
+	// Create IAM user on MinIO with custom policy
+	err = ctrl.Infra.Minio.CreateIAMUserWithCustomPolicy(ctx, req.AccessKey, req.SecretKey, policyName, policyBytes)
 	if err != nil {
 		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] Failed to create IAM user on MinIO: %v", err)
 		utils.JSON500(c, "Failed to create IAM user on MinIO")
@@ -85,7 +92,8 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 
 	// Create IAM user in database
 	iamUser := &entity.IAMUser{
-		ID:        uuid.New(), // Generate UUID here
+		ID:        uuid.New(),
+		UserId:    userID,
 		AccessKey: req.AccessKey,
 		SecretKey: req.SecretKey,
 		Name:      req.Name,
@@ -95,19 +103,46 @@ func (ctrl *Controller) CreateIAM(c *gin.Context) {
 
 	err = ctrl.Repository.IAMUserRepo.Create(iamUser)
 	if err != nil {
-		// Rollback: Delete IAM user from MinIO if database creation fails
+		// Rollback: Delete IAM user and policy from MinIO if database creation fails
 		rollbackErr := ctrl.Infra.Minio.DeleteIAMUser(ctx, req.AccessKey)
 		if rollbackErr != nil {
 			ctrl.Infra.Logger.ErrorWithContextf(ctx, rollbackErr, "[IAM] Failed to rollback MinIO IAM user after database error: %v", rollbackErr)
+		}
+		rollbackErr = ctrl.Infra.Minio.DeletePolicy(ctx, policyName)
+		if rollbackErr != nil {
+			ctrl.Infra.Logger.ErrorWithContextf(ctx, rollbackErr, "[IAM] Failed to rollback MinIO policy after database error: %v", rollbackErr)
 		}
 		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] Failed to create IAM user in database: %v", err)
 		utils.JSON500(c, "Failed to create IAM user in database")
 		return
 	}
 
-	ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Successfully created IAM with ID: %s, Name: %s, AccessKey: %s, Policy: %s", iamUser.ID.String(), iamUser.Name, iamUser.AccessKey, minioPolicy)
+	// Save policy to database
+	iamPolicy := &entity.IAMPolicy{
+		ID:     uuid.New(),
+		IAMID:  iamUser.ID,
+		Type:   "s3",
+		Policy: policyBytes,
+	}
 
-	utils.JSON200(c, gin.H{"iam_user": iamUser})
+	err = ctrl.Repository.IAMPolicyRepo.Create(iamPolicy)
+	if err != nil {
+		// Rollback: Delete IAM user from database and MinIO
+		_ = ctrl.Repository.IAMUserRepo.Delete(iamUser.ID)
+		_ = ctrl.Infra.Minio.DeleteIAMUser(ctx, req.AccessKey)
+		_ = ctrl.Infra.Minio.DeletePolicy(ctx, policyName)
+		ctrl.Infra.Logger.ErrorWithContextf(ctx, err, "[IAM] Failed to create IAM policy in database: %v", err)
+		utils.JSON500(c, "Failed to create IAM policy in database")
+		return
+	}
+
+	ctrl.Infra.Logger.InfoWithContextf(ctx, "[IAM] Successfully created IAM with ID: %s, UserID: %s, Name: %s, AccessKey: %s, PolicyName: %s",
+		iamUser.ID.String(), iamUser.UserId.String(), iamUser.Name, iamUser.AccessKey, policyName)
+
+	utils.JSON200(c, gin.H{
+		"iam_user":   iamUser,
+		"iam_policy": iamPolicy,
+	})
 }
 
 func (ctrl *Controller) ListIAMs(c *gin.Context) {
