@@ -38,11 +38,11 @@ func InjectClaimsToContext(c *gin.Context, claims jwt.MapClaims) error {
 	if !ok {
 		return errors.New("Invalid user_id format")
 	}
-	userID, err := uuid.Parse(userIDStr)
+	_, err := uuid.Parse(userIDStr)
 	if err != nil {
 		return errors.New("Invalid user_id format")
 	}
-	c.Set("user_id", userID)
+	c.Set("user_id", userIDStr)
 
 	if permission, ok := claims["permission"].(string); ok {
 		c.Set("permission", permission)
