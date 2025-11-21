@@ -2,13 +2,13 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau-cloud-orchestrator/controller"
-	"github.com/tnqbao/gau-cloud-orchestrator/middleware"
+	"github.com/tnqbao/gau-cloud-orchestrator/http/controller"
+	"github.com/tnqbao/gau-cloud-orchestrator/http/middleware"
 )
 
 func SetupRouter(ctrl *controller.Controller) *gin.Engine {
 	r := gin.Default()
-	middles, err := middlewares.NewMiddlewares(ctrl)
+	middles, err := middlewares.middlewares.NewMiddlewares(ctrl)
 	if err != nil {
 		panic(err)
 	}

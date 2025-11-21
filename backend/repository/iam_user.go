@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// IAMUserRepository handles all database operations for IAM User entity
 type IAMUserRepository struct {
 	db *gorm.DB
 }
@@ -126,7 +125,7 @@ func (r *IAMUserRepository) CheckIAMExistsByName(name string) (bool, error) {
 
 func (r *IAMUserRepository) ListByUserID(userID uuid.UUID) ([]*entity.IAMUser, error) {
 	var users []*entity.IAMUser
-	err := r.db.Where("id = ?", userID).Limit(12).Find(&users).Error
+	err := r.db.Where("user_id = ?", userID).Limit(12).Find(&users).Error
 	if err != nil {
 		return nil, err
 	}

@@ -6,14 +6,16 @@ import (
 )
 
 type Repository struct {
-	IAMUserRepo *IAMUserRepository
+	IAMUserRepo   *IAMUserRepository
+	IAMPolicyRepo *IAMPolicyRepository
 }
 
 var repository *Repository
 
 func InitRepository(infra *infra.Infra) *Repository {
 	repository = &Repository{
-		IAMUserRepo: NewIAMUserRepository(infra.Postgres.DB),
+		IAMUserRepo:   NewIAMUserRepository(infra.Postgres.DB),
+		IAMPolicyRepo: NewIAMPolicyRepository(infra.Postgres.DB),
 	}
 	return repository
 }
@@ -31,6 +33,7 @@ func (r *Repository) BeginTransaction(db *gorm.DB) *gorm.DB {
 
 func (r *Repository) WithTransaction(tx *gorm.DB) *Repository {
 	return &Repository{
-		IAMUserRepo: NewIAMUserRepository(tx),
+		IAMUserRepo:   NewIAMUserRepository(tx),
+		IAMPolicyRepo: NewIAMPolicyRepository(tx),
 	}
 }

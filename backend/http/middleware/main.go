@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau-cloud-orchestrator/controller"
+	"github.com/tnqbao/gau-cloud-orchestrator/http/controller"
 )
 
 type Middlewares struct {

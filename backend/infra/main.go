@@ -2,6 +2,7 @@ package infra
 
 import (
 	"github.com/tnqbao/gau-cloud-orchestrator/config"
+	"github.com/tnqbao/gau-cloud-orchestrator/infra/produce"
 )
 
 type Infra struct {
@@ -11,7 +12,7 @@ type Infra struct {
 	RabbitMQ             *RabbitMQClient
 	AuthorizationService *AuthorizationService
 	UploadService        *UploadService
-	EmailService         *EmailService
+	Produce              *produce.Produce
 	Minio                *MinioClient
 }
 
@@ -52,9 +53,9 @@ func InitInfra(cfg *config.Config) *Infra {
 		panic("Failed to initialize Upload service")
 	}
 
-	emailService := InitEmailService(rabbitMQ)
-	if emailService == nil {
-		panic("Failed to initialize Email service")
+	produceService := produce.InitProduce(rabbitMQ.Channel)
+	if produceService == nil {
+		panic("Failed to initialize Produce service")
 	}
 
 	minio := InitMinioClient(cfg.EnvConfig)
@@ -69,7 +70,7 @@ func InitInfra(cfg *config.Config) *Infra {
 		RabbitMQ:             rabbitMQ,
 		AuthorizationService: authorizationService,
 		UploadService:        uploadService,
-		EmailService:         emailService,
+		Produce:              produceService,
 		Minio:                minio,
 	}
 
