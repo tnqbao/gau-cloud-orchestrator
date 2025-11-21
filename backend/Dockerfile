@@ -15,12 +15,19 @@ RUN go mod download && go mod verify
 # Copy source code
 COPY . .
 
-# Build the application with optimizations
+# Build the HTTP application from http/main.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \
     -a -installsuffix cgo \
     -o gau-cloud-service.bin \
-    .
+    ./http
+
+# Build the consumer application from consumer/main.go (commented for now)
+# RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+#     -ldflags="-w -s" \
+#     -a -installsuffix cgo \
+#     -o gau-cloud-consumer.bin \
+#     ./consumer
 
 # Runtime stage
 FROM alpine:latest
@@ -43,8 +50,11 @@ RUN apk add --no-cache \
 RUN addgroup -g 1000 appuser && \
     adduser -D -u 1000 -G appuser appuser
 
-# Copy binary from builder
+# Copy HTTP service binary from builder
 COPY --from=builder /app/gau-cloud-service.bin .
+
+# Copy consumer binary from builder (commented for now)
+# COPY --from=builder /app/gau-cloud-consumer.bin .
 
 # Copy required files
 COPY --chown=appuser:appuser migration ./migration
