@@ -9,7 +9,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: minio-local
   resources:
     requests:
-      storage: 10Gi
-
+      storage: 180Gi

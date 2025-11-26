@@ -15,19 +15,20 @@ spec:
     metadata:
       labels:
         app: gau-minio-service
+        env: ${DEPLOY_ENV}
     spec:
       containers:
         - name: minio
           image: minio/minio:latest
           imagePullPolicy: IfNotPresent
-          command: ['minio', 'server', '/data', '--console-address', ':9001']
+          command: ["minio", "server", "/data", "--console-address", ":9001"]
+
           ports:
             - name: api
               containerPort: 9000
-              protocol: TCP
             - name: console
               containerPort: 9001
-              protocol: TCP
+
           env:
             - name: MINIO_ROOT_USER
               valueFrom:
@@ -39,12 +40,15 @@ spec:
                 secretKeyRef:
                   name: gau-minio-${DEPLOY_ENV}-secret
                   key: MINIO_ROOT_PASSWORD
+
           envFrom:
             - configMapRef:
                 name: gau-minio-${DEPLOY_ENV}-config
+
           volumeMounts:
             - name: minio-data
               mountPath: /data
+
           resources:
             requests:
               cpu: "100m"
@@ -52,6 +56,7 @@ spec:
             limits:
               cpu: "500m"
               memory: "1Gi"
+
       volumes:
         - name: minio-data
           persistentVolumeClaim:
