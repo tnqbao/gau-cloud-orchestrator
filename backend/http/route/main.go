@@ -23,6 +23,7 @@ func SetupRouter(ctrl *controller.Controller) *gin.Engine {
 			aimRoutes.GET("/", ctrl.ListIAMs)
 			aimRoutes.DELETE("/:id", ctrl.DeleteIAMByID)
 			aimRoutes.PUT("/:id", ctrl.UpdateIAMByID)
+			aimRoutes.PUT("/credentials/update", ctrl.UpdateIAMCredentials)
 		}
 
 	}
