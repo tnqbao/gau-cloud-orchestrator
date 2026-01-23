@@ -16,6 +16,14 @@ func SetupRouter(ctrl *controller.Controller) *gin.Engine {
 
 	apiRoutes := r.Group("/api/v1/cloud")
 	{
+		// Upload routes with dual authentication (JWT or HMAC) - NO parent auth middleware
+		uploadRoutes := apiRoutes.Group("/buckets")
+		uploadRoutes.Use(middles.UploadAuthMiddleware)
+		{
+			uploadRoutes.POST("/:id/objects", ctrl.UploadObject)
+		}
+
+		// All other routes use JWT-only authentication
 		apiRoutes.Use(middles.AuthMiddleware)
 
 		aimRoutes := apiRoutes.Group("/iam")
@@ -50,13 +58,6 @@ func SetupRouter(ctrl *controller.Controller) *gin.Engine {
 			bucketRoutes.DELETE("/:id/chunked/:upload_id", ctrl.AbortChunkedUpload)
 		}
 
-	}
-
-	// Upload routes with dual auth (JWT or HMAC)
-	uploadRoutes := r.Group("/api/v1/cloud/buckets")
-	{
-		uploadRoutes.Use(middles.UploadAuthMiddleware)
-		uploadRoutes.POST("/:id/objects", ctrl.UploadObject)
 	}
 
 	return r
